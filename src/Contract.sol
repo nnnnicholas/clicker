@@ -1,46 +1,42 @@
-// SPDX-License-Identifier: Unlicense
-pragma solidity >=0.8.0;
+// SPDX-License-Identifier: GPL-3.0
 
-import "solmate/tokens/ERC1155.sol";
+pragma solidity >=0.7.0 <0.9.0;
 
-contract Contract is ERC1155 {
-    constructor() ERC1155() {}
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/contracts/access/Ownable.sol";
 
-    function mint(
-        address to,
-        uint256 id,
-        uint256 amount,
-        bytes memory data
-    ) public {
-        ERC1155._mint(to, id, amount, data);
+/**
+ * @title Storage
+ * @dev Store & retrieve value in a variable
+ * @custom:dev-run-script ./scripts/deploy_with_ethers.ts
+ */
+contract Clicker is Ownable {
+
+    mapping (address=>mapping(uint256=>uint256)) public ownerClicks;
+    mapping (address=>mapping(uint256=>uint256)) public nonOwnerClicks;
+
+    /**
+    * @dev Get total number of clicks
+    * @return num total clicks
+    */
+    function getTotalClicks(address _contract, uint256 _tokenId) external view returns (uint256){
+        return ownerClicks[_contract][_tokenId] + nonOwnerClicks[_contract][_tokenId];
     }
 
-    function batchMint(
-        address to,
-        uint256[] memory ids,
-        uint256[] memory amounts,
-        bytes memory data
-    ) external {
-        ERC1155._batchMint(to, ids, amounts, data);
-    }
 
-    function batchMintRewrite1Each(address[] memory recipients, uint256 id)
-        external
-    {
-        uint256 amount = recipients.length;
-        for (uint256 i = 0; i < amount; i++) {
-            balanceOf[recipients[i]][id]++;
-            emit TransferSingle(msg.sender, address(0), recipients[i], id, 1);
-        }
-    }
-
-    function uri(uint256 id) public view override returns (string memory) {
-        return "URI";
-    }
-
-    function testMintOneThousand() public {
-        for (uint160 i = 0; i < 1000; i++) {
-            mint(address(i), 1, 1, "");
+    /**
+     * @dev Store value in variable
+     * @param _contract Contract
+     * @param _tokenId Token
+     */
+    function click(address _contract, uint256 _tokenId) external {
+        if(msg.sender == owner()){
+            unchecked{
+                ++ownerClicks[_contract][_tokenId];
+            }
+        } else{
+            unchecked{
+                ++nonOwnerClicks[_contract][_tokenId];
+            }
         }
     }
 }
